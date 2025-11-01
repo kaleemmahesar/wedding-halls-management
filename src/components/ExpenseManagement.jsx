@@ -13,14 +13,18 @@ import {
   Empty,
   message,
   Form,
-  Modal
+  Modal,
+  Upload,
+  Image
 } from 'antd';
 import { 
   PlusOutlined, 
   DeleteOutlined, 
   EditOutlined, 
   SaveOutlined,
-  CloseOutlined
+  CloseOutlined,
+  UploadOutlined,
+  EyeOutlined
 } from '@ant-design/icons';
 import { addExpense, updateExpense, deleteExpense } from '../store/slices/expensesSlice';
 
@@ -49,8 +53,14 @@ const ExpenseManagement = ({ bookingId, isAddingExpense, onToggleAddExpense }) =
     category: '',
     amount: '',
     isCustomCategory: false,
-    customCategory: ''
+    customCategory: '',
+    receiptImage: ''
   });
+  
+  const [imagePreview, setImagePreview] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
 
   const handleAddExpense = () => {
     onToggleAddExpense(true);
@@ -60,8 +70,11 @@ const ExpenseManagement = ({ bookingId, isAddingExpense, onToggleAddExpense }) =
       category: '',
       amount: '',
       isCustomCategory: false,
-      customCategory: ''
+      customCategory: '',
+      receiptImage: ''
     });
+    setImagePreview('');
+    setImageFile(null);
     form.resetFields();
   };
 
@@ -73,13 +86,17 @@ const ExpenseManagement = ({ bookingId, isAddingExpense, onToggleAddExpense }) =
       category: isCustom ? 'Other' : expense.category,
       amount: expense.amount,
       isCustomCategory: isCustom,
-      customCategory: isCustom ? expense.category : ''
+      customCategory: isCustom ? expense.category : '',
+      receiptImage: expense.receiptImage || ''
     });
+    setImagePreview(expense.receiptImage || '');
+    setImageFile(null);
     form.setFieldsValue({
       title: expense.title,
       category: isCustom ? 'Other' : expense.category,
       amount: expense.amount,
-      customCategory: isCustom ? expense.category : ''
+      customCategory: isCustom ? expense.category : '',
+      receiptImage: expense.receiptImage || ''
     });
   };
 
@@ -94,7 +111,8 @@ const ExpenseManagement = ({ bookingId, isAddingExpense, onToggleAddExpense }) =
         bookingId,
         title: values.title,
         category,
-        amount: parseFloat(values.amount)
+        amount: parseFloat(values.amount),
+        receiptImage: imagePreview || values.receiptImage || ''
       };
       
       if (editingExpense) {
@@ -149,8 +167,11 @@ const ExpenseManagement = ({ bookingId, isAddingExpense, onToggleAddExpense }) =
       category: '',
       amount: '',
       isCustomCategory: false,
-      customCategory: ''
+      customCategory: '',
+      receiptImage: ''
     });
+    setImagePreview('');
+    setImageFile(null);
     onToggleAddExpense(false);
   };
 
@@ -159,6 +180,36 @@ const ExpenseManagement = ({ bookingId, isAddingExpense, onToggleAddExpense }) =
       isCustomCategory: value === 'Other',
       customCategory: ''
     });
+  };
+  
+  const handleImageChange = (info) => {
+    if (info.file.status === 'done') {
+      // Get the base64 string of the uploaded image
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(info.file.originFileObj);
+    } else if (info.file.status === 'error') {
+      message.error('Image upload failed.');
+    }
+  };
+  
+  const beforeUpload = (file) => {
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('You can only upload image files!');
+    }
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      message.error('Image must be smaller than 2MB!');
+    }
+    return isImage && isLt2M;
+  };
+  
+  const handlePreview = (imageUrl) => {
+    setPreviewImage(imageUrl);
+    setPreviewVisible(true);
   };
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -189,6 +240,30 @@ const ExpenseManagement = ({ bookingId, isAddingExpense, onToggleAddExpense }) =
       dataIndex: 'amount',
       key: 'amount',
       render: (amount) => `₨${amount.toLocaleString()}`
+    },
+    {
+      title: 'Receipt',
+      key: 'receipt',
+      render: (_, record) => record.receiptImage ? (
+        <div>
+          <Image
+            src={record.receiptImage}
+            alt="Receipt"
+            style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+            preview={false}
+          />
+          <Button 
+            type="link" 
+            icon={<EyeOutlined />} 
+            onClick={() => handlePreview(record.receiptImage)}
+            style={{ display: 'block', marginTop: '5px' }}
+          >
+            View
+          </Button>
+        </div>
+      ) : (
+        <span>No receipt</span>
+      )
     },
     {
       title: 'Actions',
@@ -297,6 +372,40 @@ const ExpenseManagement = ({ bookingId, isAddingExpense, onToggleAddExpense }) =
                   <Input type="number" placeholder="Enter amount" />
                 </Form.Item>
               </Col>
+              
+              <Col span={12}>
+                <Form.Item
+                  name="receiptImage"
+                  label="Receipt Image (Optional)"
+                >
+                  <Upload
+                    beforeUpload={beforeUpload}
+                    onChange={handleImageChange}
+                    showUploadList={false}
+                    accept="image/*"
+                  >
+                    <Button icon={<UploadOutlined />}>Click to Upload</Button>
+                  </Upload>
+                  {(imagePreview || (editingExpense && newExpense.receiptImage)) && (
+                    <div style={{ marginTop: 8 }}>
+                      <Image
+                        src={imagePreview || newExpense.receiptImage}
+                        alt="Preview"
+                        style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                        preview={false}
+                      />
+                      <Button 
+                        type="link" 
+                        icon={<EyeOutlined />} 
+                        onClick={() => handlePreview(imagePreview || newExpense.receiptImage)}
+                        style={{ display: 'block' }}
+                      >
+                        View Full Size
+                      </Button>
+                    </div>
+                  )}
+                </Form.Item>
+              </Col>
             </Row>
             
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -343,6 +452,21 @@ const ExpenseManagement = ({ bookingId, isAddingExpense, onToggleAddExpense }) =
           />
         )}
       </div>
+      
+      {/* Image Preview Modal */}
+      <Modal
+        visible={previewVisible}
+        footer={null}
+        onCancel={() => setPreviewVisible(false)}
+        width={800}
+      >
+        <Image
+          src={previewImage}
+          alt="Receipt Preview"
+          style={{ width: '100%' }}
+          preview={false}
+        />
+      </Modal>
     </Card>
   );
 };

@@ -7,6 +7,7 @@ import dayjs from 'dayjs';
 import { addBooking, updateBooking } from '../store/slices/bookingsSlice';
 import BookingReceipt from '../components/BookingReceipt';
 import { FUNCTION_TYPES, PREDEFINED_MENU_ITEMS } from '../models/Booking';
+import { shareBookingConfirmation } from '../utils/sharingUtils'; // Added import for sharing utilities
 
 // Validation schema
 const bookingValidationSchema = Yup.object({
@@ -31,7 +32,11 @@ const bookingValidationSchema = Yup.object({
     then: schema => schema.required('Fixed rate is required').positive('Must be a positive number').integer(),
     otherwise: schema => schema.nullable()
   }),
-  advance: Yup.number().nullable().positive('Must be a positive number').integer()
+  advance: Yup.number().nullable().positive('Must be a positive number').integer(),
+  djCharges: Yup.number().nullable().integer().min(0, 'Must be a positive number'),
+  decorCharges: Yup.number().nullable().integer().min(0, 'Must be a positive number'),
+  tmaCharges: Yup.number().nullable().integer().min(0, 'Must be a positive number'),
+  otherCharges: Yup.number().nullable().integer().min(0, 'Must be a positive number')
 });
 
 const BookingFormPage = () => {
@@ -68,6 +73,11 @@ const BookingFormPage = () => {
     costPerHead: isEditing && existingBooking.bookingType === 'perHead' ? existingBooking.costPerHead : '',
     fixedRate: isEditing && existingBooking.bookingType === 'fixed' ? existingBooking.fixedRate : '',
     advance: isEditing ? existingBooking.advance : '',
+    djCharges: isEditing ? existingBooking.djCharges : '',
+    decorCharges: isEditing ? existingBooking.decorCharges : '',
+    tmaCharges: isEditing ? existingBooking.tmaCharges : '',
+    otherCharges: isEditing ? existingBooking.otherCharges : '',
+    specialNotes: isEditing ? existingBooking.specialNotes : '',
     selectedMenuItems: isEditing ? existingBooking.menuItems.filter(item => PREDEFINED_MENU_ITEMS.includes(item)) : [],
     customMenuItems: isEditing ? existingBooking.menuItems.filter(item => !PREDEFINED_MENU_ITEMS.includes(item)) : ['']
   };
@@ -132,13 +142,20 @@ const BookingFormPage = () => {
       return;
     }
     
-    // Calculate total cost based on booking type
+    // Calculate total cost including additional charges
     let totalCost = 0;
     if (values.bookingType === 'perHead' && values.guests && values.costPerHead) {
       totalCost = (parseInt(values.guests) || 0) * (parseInt(values.costPerHead) || 0) * (parseInt(values.bookingDays) || 1);
     } else if (values.bookingType === 'fixed' && values.fixedRate) {
       totalCost = (parseInt(values.fixedRate) || 0) * (parseInt(values.bookingDays) || 1);
     }
+    
+    // Add additional charges
+    const djCharges = parseInt(values.djCharges) || 0;
+    const decorCharges = parseInt(values.decorCharges) || 0;
+    const tmaCharges = parseInt(values.tmaCharges) || 0;
+    const otherCharges = parseInt(values.otherCharges) || 0;
+    totalCost += djCharges + decorCharges + tmaCharges + otherCharges;
 
     // Combine selected and custom menu items
     const allMenuItems = [
@@ -154,6 +171,11 @@ const BookingFormPage = () => {
       costPerHead: values.costPerHead ? parseInt(values.costPerHead) : 0,
       fixedRate: values.fixedRate ? parseInt(values.fixedRate) : 0,
       advance: values.advance ? parseInt(values.advance) : 0,
+      djCharges: values.djCharges ? parseInt(values.djCharges) : 0,
+      decorCharges: values.decorCharges ? parseInt(values.decorCharges) : 0,
+      tmaCharges: values.tmaCharges ? parseInt(values.tmaCharges) : 0,
+      otherCharges: values.otherCharges ? parseInt(values.otherCharges) : 0,
+      specialNotes: values.specialNotes || '',
       totalCost: totalCost,
       menuItems: allMenuItems,
       bookingDate: new Date().toISOString()
@@ -180,6 +202,9 @@ const BookingFormPage = () => {
           // Show receipt after successful booking
           setSubmittedBooking(result.payload);
           setShowReceipt(true);
+          
+          // Automatically share booking confirmation via WhatsApp and send SMS
+          shareBookingConfirmation(result.payload);
         })
         .catch(() => {
           alert('Failed to save booking.');
@@ -190,13 +215,21 @@ const BookingFormPage = () => {
 
   // Auto-calculate total cost
   const calculateTotalCost = (values) => {
+    let baseCost = 0;
     if (values.bookingType === 'perHead' && values.guests && values.costPerHead) {
-      return (parseInt(values.guests) || 0) * (parseInt(values.costPerHead) || 0) * (parseInt(values.bookingDays) || 1);
+      baseCost = (parseInt(values.guests) || 0) * (parseInt(values.costPerHead) || 0) * (parseInt(values.bookingDays) || 1);
     } else if (values.bookingType === 'fixed' && values.fixedRate) {
       // Fixed rate means fixed, regardless of number of days
-      return parseInt(values.fixedRate) || 0;
+      baseCost = parseInt(values.fixedRate) || 0;
     }
-    return 0;
+    
+    // Add additional charges
+    const djCharges = parseInt(values.djCharges) || 0;
+    const decorCharges = parseInt(values.decorCharges) || 0;
+    const tmaCharges = parseInt(values.tmaCharges) || 0;
+    const otherCharges = parseInt(values.otherCharges) || 0;
+    
+    return baseCost + djCharges + decorCharges + tmaCharges + otherCharges;
   };
 
   // Calculate balance
@@ -215,8 +248,8 @@ const BookingFormPage = () => {
   // If showing receipt, render the receipt component
   if (showReceipt && submittedBooking) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-gray-50 py-4 md:py-8">
+        <div className="max-w-4xl mx-auto px-4">
           <BookingReceipt booking={submittedBooking} onClose={handleReceiptClose} />
         </div>
       </div>
@@ -224,7 +257,7 @@ const BookingFormPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-4 md:py-8">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <h1 className="text-2xl font-bold text-gray-800">
@@ -252,199 +285,213 @@ const BookingFormPage = () => {
               return (
                 <Form>
                   {/* Event Details Section */}
-                  <div className="mb-8">
+                  <div className="mb-6 md:mb-8">
                     <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
                       Event Details
                     </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Function Date <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="date"
-                          value={values.functionDate}
-                          onChange={(e) => setFieldValue('functionDate', e.target.value)}
-                          onBlur={handleBlur}
-                          className={`w-full px-3 py-2 border rounded-md ${errors.functionDate && touched.functionDate ? 'border-red-500' : 'border-gray-300'}`}
-                          min={isEditing ? undefined : new Date().toISOString().split('T')[0]}
-                        />
-                        {errors.functionDate && touched.functionDate && (
-                          <p className="mt-1 text-sm text-red-500">{errors.functionDate}</p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Number of Guests <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="number"
-                          name="guests"
-                          value={values.guests}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          className={`w-full px-3 py-2 border rounded-md ${errors.guests && touched.guests ? 'border-red-500' : 'border-gray-300'}`}
-                          min="1"
-                        />
-                        {errors.guests && touched.guests && (
-                          <p className="mt-1 text-sm text-red-500">{errors.guests}</p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Booking Days <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="number"
-                          name="bookingDays"
-                          value={values.bookingDays}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          className={`w-full px-3 py-2 border rounded-md ${errors.bookingDays && touched.bookingDays ? 'border-red-500' : 'border-gray-300'}`}
-                          min="1"
-                        />
-                        {errors.bookingDays && touched.bookingDays && (
-                          <p className="mt-1 text-sm text-red-500">{errors.bookingDays}</p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Function Type <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          name="functionType"
-                          value={values.functionType}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          className={`w-full px-3 py-2 border rounded-md ${errors.functionType && touched.functionType ? 'border-red-500' : 'border-gray-300'}`}
-                        >
-                          <option value="">Select function type</option>
-                          {FUNCTION_TYPES.map(type => (
-                            <option key={type} value={type}>{type}</option>
-                          ))}
-                        </select>
-                        {errors.functionType && touched.functionType && (
-                          <p className="mt-1 text-sm text-red-500">{errors.functionType}</p>
-                        )}
-                      </div>
-                      
-                      <div className="sm:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Booking By <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="bookingBy"
-                          value={values.bookingBy}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          className={`w-full px-3 py-2 border rounded-md ${errors.bookingBy && touched.bookingBy ? 'border-red-500' : 'border-gray-300'}`}
-                          placeholder="Person's name"
-                        />
-                        {errors.bookingBy && touched.bookingBy && (
-                          <p className="mt-1 text-sm text-red-500">{errors.bookingBy}</p>
-                        )}
-                      </div>
-                      
-                      <div className="sm:col-span-2 lg:col-span-3">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Address <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="address"
-                          value={values.address}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          className={`w-full px-3 py-2 border rounded-md ${errors.address && touched.address ? 'border-red-500' : 'border-gray-300'}`}
-                          placeholder="Full address"
-                        />
-                        {errors.address && touched.address && (
-                          <p className="mt-1 text-sm text-red-500">{errors.address}</p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          CNIC <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="cnic"
-                          value={values.cnic}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          className={`w-full px-3 py-2 border rounded-md ${errors.cnic && touched.cnic ? 'border-red-500' : 'border-gray-300'}`}
-                          placeholder="12345-1234567-1"
-                        />
-                        {errors.cnic && touched.cnic && (
-                          <p className="mt-1 text-sm text-red-500">{errors.cnic}</p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Contact Number <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="contactNumber"
-                          value={values.contactNumber}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          className={`w-full px-3 py-2 border rounded-md ${errors.contactNumber && touched.contactNumber ? 'border-red-500' : 'border-gray-300'}`}
-                          placeholder="0300-1234567"
-                        />
-                        {errors.contactNumber && touched.contactNumber && (
-                          <p className="mt-1 text-sm text-red-500">{errors.contactNumber}</p>
-                        )}
-                      </div>
-                      
-                      <div className="sm:col-span-2 lg:col-span-3">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Event Time <span className="text-red-500">*</span>
-                        </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div>
-                            <input
-                              type="time"
-                              value={values.startTime}
-                              onChange={(e) => setFieldValue('startTime', e.target.value)}
-                              onBlur={handleBlur}
-                              className={`w-full px-3 py-2 border rounded-md ${errors.startTime && touched.startTime ? 'border-red-500' : 'border-gray-300'}`}
-                            />
-                            {errors.startTime && touched.startTime && (
-                              <p className="mt-1 text-sm text-red-500">{errors.startTime}</p>
-                            )}
-                          </div>
-                          <div>
-                            <input
-                              type="time"
-                              value={values.endTime}
-                              onChange={(e) => setFieldValue('endTime', e.target.value)}
-                              onBlur={handleBlur}
-                              className={`w-full px-3 py-2 border rounded-md ${errors.endTime && touched.endTime ? 'border-red-500' : 'border-gray-300'}`}
-                            />
-                            {errors.endTime && touched.endTime && (
-                              <p className="mt-1 text-sm text-red-500">{errors.endTime}</p>
-                            )}
-                          </div>
+                    <div className="grid grid-cols-1 gap-4">
+                      {/* First Row: Function Type, Booking By, Address */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Function Type <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="functionType"
+                            value={values.functionType}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            className={`w-full px-3 py-2 border rounded-md ${errors.functionType && touched.functionType ? 'border-red-500' : 'border-gray-300'}`}
+                          >
+                            <option value="">Select function type</option>
+                            {FUNCTION_TYPES.map(type => (
+                              <option key={type} value={type}>{type}</option>
+                            ))}
+                          </select>
+                          {errors.functionType && touched.functionType && (
+                            <p className="mt-1 text-sm text-red-500">{errors.functionType}</p>
+                          )}
                         </div>
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>Start Time</span>
-                          <span>End Time</span>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Booking By <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="bookingBy"
+                            value={values.bookingBy}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            className={`w-full px-3 py-2 border rounded-md ${errors.bookingBy && touched.bookingBy ? 'border-red-500' : 'border-gray-300'}`}
+                            placeholder="Person's name"
+                          />
+                          {errors.bookingBy && touched.bookingBy && (
+                            <p className="mt-1 text-sm text-red-500">{errors.bookingBy}</p>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Address <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="address"
+                            value={values.address}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            className={`w-full px-3 py-2 border rounded-md ${errors.address && touched.address ? 'border-red-500' : 'border-gray-300'}`}
+                            placeholder="Full address"
+                          />
+                          {errors.address && touched.address && (
+                            <p className="mt-1 text-sm text-red-500">{errors.address}</p>
+                          )}
                         </div>
                       </div>
+
+                      {/* Third Row: Function Date, Number of Guests, Booking Days */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Function Date <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="date"
+                            value={values.functionDate}
+                            onChange={(e) => setFieldValue('functionDate', e.target.value)}
+                            onBlur={handleBlur}
+                            className={`w-full px-3 py-2 border rounded-md ${errors.functionDate && touched.functionDate ? 'border-red-500' : 'border-gray-300'}`}
+                            min={isEditing ? undefined : new Date().toISOString().split('T')[0]}
+                          />
+                          {errors.functionDate && touched.functionDate && (
+                            <p className="mt-1 text-sm text-red-500">{errors.functionDate}</p>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Number of Guests <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            name="guests"
+                            value={values.guests}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            className={`w-full px-3 py-2 border rounded-md ${errors.guests && touched.guests ? 'border-red-500' : 'border-gray-300'}`}
+                            min="1"
+                          />
+                          {errors.guests && touched.guests && (
+                            <p className="mt-1 text-sm text-red-500">{errors.guests}</p>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Booking Days <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            name="bookingDays"
+                            value={values.bookingDays}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            className={`w-full px-3 py-2 border rounded-md ${errors.bookingDays && touched.bookingDays ? 'border-red-500' : 'border-gray-300'}`}
+                            min="1"
+                          />
+                          {errors.bookingDays && touched.bookingDays && (
+                            <p className="mt-1 text-sm text-red-500">{errors.bookingDays}</p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Second Row: CNIC, Contact Number, Event Time */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            CNIC <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="cnic"
+                            value={values.cnic}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            className={`w-full px-3 py-2 border rounded-md ${errors.cnic && touched.cnic ? 'border-red-500' : 'border-gray-300'}`}
+                            placeholder="12345-1234567-1"
+                          />
+                          {errors.cnic && touched.cnic && (
+                            <p className="mt-1 text-sm text-red-500">{errors.cnic}</p>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Contact Number <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="contactNumber"
+                            value={values.contactNumber}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            className={`w-full px-3 py-2 border rounded-md ${errors.contactNumber && touched.contactNumber ? 'border-red-500' : 'border-gray-300'}`}
+                            placeholder="0300-1234567"
+                          />
+                          {errors.contactNumber && touched.contactNumber && (
+                            <p className="mt-1 text-sm text-red-500">{errors.contactNumber}</p>
+                          )}
+                        </div>
+                        
+                        {/* Event Time - Start and End Time in same column */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Event Time <span className="text-red-500">*</span>
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <input
+                                type="time"
+                                name="startTime"
+                                value={values.startTime}
+                                onChange={(e) => setFieldValue('startTime', e.target.value)}
+                                onBlur={handleBlur}
+                                className={`w-full px-3 py-2 border rounded-md ${errors.startTime && touched.startTime ? 'border-red-500' : 'border-gray-300'}`}
+                              />
+                              {errors.startTime && touched.startTime && (
+                                <p className="mt-1 text-sm text-red-500">{errors.startTime}</p>
+                              )}
+                            </div>
+                            <div>
+                              <input
+                                type="time"
+                                name="endTime"
+                                value={values.endTime}
+                                onChange={(e) => setFieldValue('endTime', e.target.value)}
+                                onBlur={handleBlur}
+                                className={`w-full px-3 py-2 border rounded-md ${errors.endTime && touched.endTime ? 'border-red-500' : 'border-gray-300'}`}
+                              />
+                              {errors.endTime && touched.endTime && (
+                                <p className="mt-1 text-sm text-red-500">{errors.endTime}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>Start Time</span>
+                            <span>End Time</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      
                     </div>
                   </div>
 
                   <div className="border-t border-gray-200 my-6"></div>
 
                   {/* Pricing Section */}
-                  <div className="mb-8">
+                  <div className="mb-6 md:mb-8">
                     <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
                       Pricing Information
                     </h2>
@@ -520,14 +567,66 @@ const BookingFormPage = () => {
                           )}
                         </div>
                       )}
+                    
+                      {/* Additional Charges Fields */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          DJ Charges (₨)
+                        </label>
+                        <input
+                          type="number"
+                          name="djCharges"
+                          value={values.djCharges || ''}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          min="0"
+                          placeholder="DJ charges"
+                        />
+                      </div>
                       
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Total Cost
+                          Decor Charges (₨)
                         </label>
-                        <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-md">
-                          <span className="font-semibold">₨{totalCost.toLocaleString()}</span>
-                        </div>
+                        <input
+                          type="number"
+                          name="decorCharges"
+                          value={values.decorCharges || ''}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          min="0"
+                          placeholder="Decor charges"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          TMA Charges (₨)
+                        </label>
+                        <input
+                          type="number"
+                          name="tmaCharges"
+                          value={values.tmaCharges || ''}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          min="0"
+                          placeholder="TMA charges"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Other Charges (₨)
+                        </label>
+                        <input
+                          type="number"
+                          name="otherCharges"
+                          value={values.otherCharges || ''}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          min="0"
+                          placeholder="Any other charges"
+                        />
                       </div>
                     </div>
                   </div>
@@ -535,11 +634,11 @@ const BookingFormPage = () => {
                   <div className="border-t border-gray-200 my-6"></div>
 
                   {/* Menu Items Section */}
-                  <div className="mb-8">
+                  <div className="mb-6 md:mb-8">
                     <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
                       Menu Items
                     </h2>
-                    
+                  
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Select Menu Items
@@ -566,7 +665,7 @@ const BookingFormPage = () => {
                         </div>
                       </div>
                     </div>
-                    
+                  
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Custom Menu Items
@@ -617,12 +716,27 @@ const BookingFormPage = () => {
 
                   <div className="border-t border-gray-200 my-6"></div>
 
+                  {/* Special Notes */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Special Notes
+                    </label>
+                    <textarea
+                      name="specialNotes"
+                      value={values.specialNotes || ''}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      rows="3"
+                      placeholder="Any special notes or requirements for this booking"
+                    ></textarea>
+                  </div>
+
                   {/* Payment Section */}
-                  <div className="mb-8">
+                  <div className="mb-6 md:mb-8">
                     <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
                       Payment Details
                     </h2>
-                    
+                  
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -632,7 +746,7 @@ const BookingFormPage = () => {
                           <span className="font-semibold">₨{totalCost.toLocaleString()}</span>
                         </div>
                       </div>
-                      
+                    
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Advance Payment (₨)
@@ -650,7 +764,7 @@ const BookingFormPage = () => {
                           <p className="mt-1 text-sm text-red-500">{errors.advance}</p>
                         )}
                       </div>
-                      
+                    
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Balance Due
@@ -661,13 +775,13 @@ const BookingFormPage = () => {
                           </span>
                         </div>
                       </div>
-                      
+                    
                       <div className="lg:col-span-3">
                         <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm">
                           <p>
                             <span className="font-medium">Note:</span> Total cost is calculated as {values.bookingType === 'perHead' 
                               ? `((Number of Guests × Cost Per Head) × Booking Days)` 
-                              : `(Fixed Rate × Booking Days)`}.
+                              : `(Fixed Rate × Booking Days)`} plus additional charges.
                           </p>
                         </div>
                       </div>

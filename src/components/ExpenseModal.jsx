@@ -13,6 +13,8 @@ const ExpenseModal = ({ bookingId, bookingBy, isOpen, onClose }) => {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
   const [amount, setAmount] = useState('');
+  const [receiptImage, setReceiptImage] = useState(''); // New state for receipt image
+  const [imagePreview, setImagePreview] = useState(''); // New state for image preview
   
   // Calculate total expenses for this booking
   const totalExpenses = bookingExpenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
@@ -31,14 +33,48 @@ const ExpenseModal = ({ bookingId, bookingBy, isOpen, onClose }) => {
     setTitle('');
     setCategory(EXPENSE_CATEGORIES[0]);
     setAmount('');
+    setReceiptImage('');
+    setImagePreview('');
     setEditingExpense(null);
+  };
+  
+  // Handle image upload
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check if file is an image
+      if (!file.type.startsWith('image/')) {
+        alert('Please upload an image file');
+        return;
+      }
+      
+      // Check file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Image size should be less than 2MB');
+        return;
+      }
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImagePreview(event.target.result);
+        setReceiptImage(event.target.result); // Store base64 string
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  // Remove image
+  const removeImage = () => {
+    setImagePreview('');
+    setReceiptImage('');
   };
   
   const handleAddExpense = (e) => {
     e.preventDefault();
     
     if (!title || !amount) {
-      alert('Please fill in all fields');
+      alert('Please fill in all required fields');
       return;
     }
     
@@ -46,7 +82,8 @@ const ExpenseModal = ({ bookingId, bookingBy, isOpen, onClose }) => {
       bookingId,
       title,
       category,
-      amount: parseFloat(amount)
+      amount: parseFloat(amount),
+      receiptImage // Include receipt image
     };
     
     if (editingExpense) {
@@ -76,6 +113,8 @@ const ExpenseModal = ({ bookingId, bookingBy, isOpen, onClose }) => {
     setTitle(expense.title);
     setCategory(expense.category);
     setAmount(expense.amount);
+    setReceiptImage(expense.receiptImage || '');
+    setImagePreview(expense.receiptImage || '');
     setEditingExpense(expense);
     setIsAdding(true);
   };
@@ -105,7 +144,7 @@ const ExpenseModal = ({ bookingId, bookingBy, isOpen, onClose }) => {
         {/* This element is to trick the browser into centering the modal contents. */}
         <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
         
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div className="sm:flex sm:items-start">
               <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
@@ -155,38 +194,74 @@ const ExpenseModal = ({ bookingId, bookingBy, isOpen, onClose }) => {
                 {!isAdding ? (
                   <div>
                     {bookingExpenses.length > 0 ? (
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {bookingExpenses.map((expense) => (
-                          <div key={expense.id} className="flex justify-between items-center py-3 border-b border-gray-200 last:border-0">
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">{expense.title}</p>
-                              <div className="flex items-center mt-1">
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                  {expense.category}
-                                </span>
-                                <span className="ml-2 text-xs text-gray-500">{formatCurrency(expense.amount)}</span>
-                              </div>
-                            </div>
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => handleEditExpense(expense)}
-                                className="text-indigo-600 hover:text-indigo-900"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={() => handleDeleteExpense(expense.id)}
-                                className="text-red-600 hover:text-red-900"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Title
+                              </th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Category
+                              </th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Amount
+                              </th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Receipt
+                              </th>
+                              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {bookingExpenses.map((expense) => (
+                              <tr key={expense.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-medium text-gray-900">{expense.title}</div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    {expense.category}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {formatCurrency(expense.amount)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  {expense.receiptImage ? (
+                                    <img 
+                                      src={expense.receiptImage} 
+                                      alt="Receipt" 
+                                      className="w-12 h-12 object-cover rounded border"
+                                    />
+                                  ) : (
+                                    <span className="text-gray-400 text-sm">No receipt</span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                  <button
+                                    onClick={() => handleEditExpense(expense)}
+                                    className="text-indigo-600 hover:text-indigo-900 mr-3"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteExpense(expense.id)}
+                                    className="text-red-600 hover:text-red-900"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     ) : (
                       <div className="text-center py-6">
@@ -250,6 +325,41 @@ const ExpenseModal = ({ bookingId, bookingBy, isOpen, onClose }) => {
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                         required
                       />
+                    </div>
+                    
+                    {/* Receipt Image Upload */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Receipt Image (Optional)</label>
+                      <div className="flex items-center space-x-4">
+                        <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                          {imagePreview ? (
+                            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover rounded-lg" />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              <p className="text-xs text-gray-500">Upload</p>
+                            </div>
+                          )}
+                          <input 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                          />
+                        </label>
+                        {imagePreview && (
+                          <button
+                            type="button"
+                            onClick={removeImage}
+                            className="text-red-600 hover:text-red-800 text-sm"
+                          >
+                            Remove Image
+                          </button>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">Upload a receipt image (max 2MB)</p>
                     </div>
                     
                     <div className="flex space-x-3 pt-4">

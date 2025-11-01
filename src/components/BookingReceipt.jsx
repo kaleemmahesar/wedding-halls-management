@@ -1,11 +1,181 @@
 import React from 'react';
 import Button from './Button';
+import { shareBookingConfirmation } from '../utils/sharingUtils'; // Added import for sharing utilities
 
 const BookingReceipt = ({ booking, onClose }) => {
   // Calculate total cost
   const totalCost = booking.totalCost || 0;
   const advance = booking.advance || 0;
   const balance = totalCost - advance;
+
+  // Handle print functionality to match BookingCard.jsx implementation
+  const handlePrint = () => {
+    // Create a temporary receipt component for printing that matches BookingCard.jsx
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Booking Receipt</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+          @media print {
+            body {
+              margin: 0;
+              padding: 2mm;
+              width: 78mm;
+              font-size: 4pt;
+            }
+            .print-small { font-size: 4pt; }
+            .print-medium { font-size: 5pt; }
+            .print-large { font-size: 6pt; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="bg-white p-2 max-w-[78mm] mx-auto">
+          <div class="text-center mb-3">
+            <h1 class="text-lg font-bold text-gray-900 mb-1 print-medium">Wedding Hall Booking Receipt</h1>
+            <p class="text-gray-600 text-xs print-small">Booking Confirmation Details</p>
+            <div class="border-b border-gray-300 my-2"></div>
+          </div>
+          
+          <div class="grid grid-cols-1 gap-2 mb-3">
+            <div class="border border-gray-200 rounded p-2">
+              <h2 class="text-sm font-semibold text-gray-800 mb-2 pb-1 border-b border-gray-200 print-small">Booking Details</h2>
+              <div class="space-y-1">
+                <div class="flex justify-between text-xs print-small">
+                  <span class="text-gray-600">ID:</span>
+                  <span class="font-medium">#${booking.id.substring(0, 8)}</span>
+                </div>
+                <div class="flex justify-between text-xs print-small">
+                  <span class="text-gray-600">Date:</span>
+                  <span class="font-medium">${new Date(booking.bookingDate || new Date()).toLocaleDateString()}</span>
+                </div>
+                <div class="flex justify-between text-xs print-small">
+                  <span class="text-gray-600">By:</span>
+                  <span class="font-medium">${booking.bookingBy}</span>
+                </div>
+                <div class="flex justify-between text-xs print-small">
+                  <span class="text-gray-600">CNIC:</span>
+                  <span class="font-medium">${booking.cnic}</span>
+                </div>
+                <div class="flex justify-between text-xs print-small">
+                  <span class="text-gray-600">Contact:</span>
+                  <span class="font-medium">${booking.contactNumber}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="border border-gray-200 rounded p-2">
+              <h2 class="text-sm font-semibold text-gray-800 mb-2 pb-1 border-b border-gray-200 print-small">Function Details</h2>
+              <div class="space-y-1">
+                <div class="flex justify-between text-xs print-small">
+                  <span class="text-gray-600">Type:</span>
+                  <span class="font-medium">${booking.functionType}</span>
+                </div>
+                <div class="flex justify-between text-xs print-small">
+                  <span class="text-gray-600">Date:</span>
+                  <span class="font-medium">${new Date(booking.functionDate).toLocaleDateString()}</span>
+                </div>
+                <div class="flex justify-between text-xs print-small">
+                  <span class="text-gray-600">Time:</span>
+                  <span class="font-medium">${booking.startTime} - ${booking.endTime}</span>
+                </div>
+                <div class="flex justify-between text-xs print-small">
+                  <span class="text-gray-600">Guests:</span>
+                  <span class="font-medium">${booking.guests}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3 border border-gray-200 rounded p-2">
+            <h2 class="text-sm font-semibold text-gray-800 mb-2 pb-1 border-b border-gray-200 print-small">Menu Items</h2>
+            ${booking.menuItems && booking.menuItems.length > 0 ? 
+              `<div class="grid grid-cols-2 gap-1">
+                ${booking.menuItems.map((item, index) => 
+                  `<div class="bg-gray-50 rounded p-1 border border-gray-200">
+                    <span class="text-xs font-medium text-gray-800 print-small">${item}</span>
+                  </div>`
+                ).join('')}
+              </div>` : 
+              `<p class="text-gray-500 italic text-xs print-small">No menu items</p>`
+            }
+          </div>
+          
+          <div class="border border-gray-200 rounded p-2 mb-3">
+            <h2 class="text-sm font-semibold text-gray-800 mb-2 pb-1 border-b border-gray-200 print-small">Payment Details</h2>
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs print-small">
+                <span class="text-gray-600">Per Head:</span>
+                <span class="font-medium">₨${booking.costPerHead?.toLocaleString() || '0'}</span>
+              </div>
+              <div class="flex justify-between text-xs print-small">
+                <span class="text-gray-600">Total:</span>
+                <span class="font-bold text-gray-900">₨${totalCost.toLocaleString()}</span>
+              </div>
+              <div class="flex justify-between text-xs print-small">
+                <span class="text-gray-600">Advance:</span>
+                <span class="font-medium text-green-600">₨${advance.toLocaleString()}</span>
+              </div>
+              <div class="flex justify-between pt-1 border-t border-gray-200 text-xs print-small">
+                <span class="text-gray-600 font-medium">Balance:</span>
+                <span class="font-bold text-gray-900">₨${balance.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Additional Charges Section -->
+          ${(booking.djCharges > 0 || booking.decorCharges > 0 || booking.tmaCharges > 0 || booking.otherCharges > 0) ? `
+          <div class="border border-gray-200 rounded p-2 mb-3">
+            <h2 class="text-sm font-semibold text-gray-800 mb-2 pb-1 border-b border-gray-200 print-small">Additional Charges</h2>
+            <div class="space-y-1">
+              ${booking.djCharges > 0 ? `
+              <div class="flex justify-between text-xs print-small">
+                <span class="text-gray-600">DJ Charges:</span>
+                <span class="font-medium">₨${booking.djCharges.toLocaleString()}</span>
+              </div>` : ''}
+              ${booking.decorCharges > 0 ? `
+              <div class="flex justify-between text-xs print-small">
+                <span class="text-gray-600">Decor Charges:</span>
+                <span class="font-medium">₨${booking.decorCharges.toLocaleString()}</span>
+              </div>` : ''}
+              ${booking.tmaCharges > 0 ? `
+              <div class="flex justify-between text-xs print-small">
+                <span class="text-gray-600">TMA Charges:</span>
+                <span class="font-medium">₨${booking.tmaCharges.toLocaleString()}</span>
+              </div>` : ''}
+              ${booking.otherCharges > 0 ? `
+              <div class="flex justify-between text-xs print-small">
+                <span class="text-gray-600">Other Charges:</span>
+                <span class="font-medium">₨${booking.otherCharges.toLocaleString()}</span>
+              </div>` : ''}
+            </div>
+          </div>` : ''}
+          
+          <div class="text-center text-gray-600 text-xs print-small mb-2">
+            <p>Thank you for choosing our services!</p>
+            <p class="mt-1">${booking.contactNumber}</p>
+          </div>
+        </div>
+        
+        <script>
+          window.onload = function() {
+            window.print();
+            setTimeout(function() { window.close(); }, 1000);
+          }
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  // Handle sharing via WhatsApp
+  const handleShareViaWhatsApp = () => {
+    shareBookingConfirmation(booking);
+  };
 
   return (
     <div className="bg-white p-2 max-w-3xl mx-auto print:p-1 print:max-w-[78mm] print:mx-auto">
@@ -139,6 +309,47 @@ const BookingReceipt = ({ booking, onClose }) => {
           </div>
         </div>
 
+        {/* Additional Charges - Only show if there are charges */}
+        {(booking.djCharges > 0 || booking.decorCharges > 0 || booking.tmaCharges > 0 || booking.otherCharges > 0) && (
+          <div className="border border-gray-200 rounded p-2 print:p-1 mb-3">
+            <h2 className="text-sm font-semibold text-gray-800 mb-2 pb-1 border-b border-gray-200 print-small">Additional Charges</h2>
+            <div className="space-y-1">
+              {booking.djCharges > 0 && (
+                <div className="flex justify-between text-xs print-small">
+                  <span className="text-gray-600">DJ Charges:</span>
+                  <span className="font-medium">₨{booking.djCharges.toLocaleString()}</span>
+                </div>
+              )}
+              {booking.decorCharges > 0 && (
+                <div className="flex justify-between text-xs print-small">
+                  <span className="text-gray-600">Decor Charges:</span>
+                  <span className="font-medium">₨{booking.decorCharges.toLocaleString()}</span>
+                </div>
+              )}
+              {booking.tmaCharges > 0 && (
+                <div className="flex justify-between text-xs print-small">
+                  <span className="text-gray-600">TMA Charges:</span>
+                  <span className="font-medium">₨{booking.tmaCharges.toLocaleString()}</span>
+                </div>
+              )}
+              {booking.otherCharges > 0 && (
+                <div className="flex justify-between text-xs print-small">
+                  <span className="text-gray-600">Other Charges:</span>
+                  <span className="font-medium">₨{booking.otherCharges.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Special Notes - Only show if there are notes */}
+        {booking.specialNotes && (
+          <div className="border border-gray-200 rounded p-2 print:p-1 mb-3">
+            <h2 className="text-sm font-semibold text-gray-800 mb-2 pb-1 border-b border-gray-200 print-small">Special Notes</h2>
+            <p className="text-xs text-gray-700 print-small">{booking.specialNotes}</p>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="text-center text-gray-600 text-xs print-small mb-2">
           <p>Thank you for choosing our services!</p>
@@ -149,10 +360,18 @@ const BookingReceipt = ({ booking, onClose }) => {
         <div className="flex flex-col sm:flex-row justify-center gap-2 no-print">
           <Button 
             variant="primary" 
-            onClick={() => window.print()}
+            onClick={handlePrint}
             className="w-full sm:w-auto py-1 px-3 text-sm"
           >
             Print Receipt
+          </Button>
+          {/* Added WhatsApp Share Button */}
+          <Button 
+            variant="secondary" 
+            onClick={handleShareViaWhatsApp}
+            className="w-full sm:w-auto py-1 px-3 text-sm"
+          >
+            Share via WhatsApp
           </Button>
           <Button 
             variant="secondary" 

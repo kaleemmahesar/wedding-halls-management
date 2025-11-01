@@ -32,3 +32,13 @@ export const calculateNetProfit = (revenue, expenses) => {
 export const calculateBookingBalance = (booking) => {
   return booking.totalCost - (booking.advance || 0);
 };
+
+// Calculate total cost including additional charges
+export const calculateTotalCostWithCharges = (baseCost, booking) => {
+  const djCharges = booking.djCharges || 0;
+  const decorCharges = booking.decorCharges || 0;
+  const tmaCharges = booking.tmaCharges || 0;
+  const otherCharges = booking.otherCharges || 0;
+  
+  return baseCost + djCharges + decorCharges + tmaCharges + otherCharges;
+};

@@ -5,13 +5,15 @@ export class Expense {
     bookingId = '',
     title = '',
     category = '',
-    amount = 0
+    amount = 0,
+    receiptImage = '' // URL or base64 string of the receipt image
   } = {}) {
     this.id = id;
     this.bookingId = bookingId;
     this.title = title;
     this.category = category;
     this.amount = amount;
+    this.receiptImage = receiptImage; // URL or base64 string of the receipt image
   }
 }
 

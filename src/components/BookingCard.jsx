@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { updateBooking } from '../store/slices/bookingsSlice';
 import dayjs from 'dayjs';
 import PaymentModal from './PaymentModal';
 import ExpenseModal from './ExpenseModal';
+import { shareBookingConfirmation } from '../utils/sharingUtils'; // Added import for sharing utilities
 
 const BookingCard = ({ bookingId }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const booking = useSelector(state => state.bookings.bookings.find(b => b.id === bookingId));
   const expenses = useSelector(state => state.expenses.expenses);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -42,9 +45,32 @@ const BookingCard = ({ bookingId }) => {
     }).format(amount);
   };
 
+  // Handle edit button click
+  const handleEditClick = () => {
+    navigate(`/bookings/edit/${booking.id}`);
+  };
+
+  // Handle sharing via WhatsApp
+  const handleShareViaWhatsApp = () => {
+    shareBookingConfirmation(booking);
+  };
+
   return (
     <>
       <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5 hover:shadow-lg transition-all duration-300">
+        {/* Added edit button in the top right corner */}
+        <div className="flex justify-end mb-2">
+          <button 
+            onClick={handleEditClick}
+            className="text-gray-400 hover:text-indigo-600 transition-colors"
+            title="Edit Booking"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+        </div>
+        
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
           <div>
             <div className="flex items-start">
@@ -120,7 +146,7 @@ const BookingCard = ({ bookingId }) => {
           <div className="bg-gray-50 p-3 rounded-lg">
             <div className="flex items-center">
               <svg className="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="text-xs text-gray-500">Time</p>
             </div>
@@ -171,7 +197,57 @@ const BookingCard = ({ bookingId }) => {
             <p className="text-sm font-semibold text-purple-900 mt-1">{formatCurrency(totalCost - totalExpenses)}</p>
           </div>
         </div>
-        
+
+        {/* Additional Charges - Only show if there are charges */}
+        {(booking.djCharges > 0 || booking.decorCharges > 0 || booking.tmaCharges > 0 || booking.otherCharges > 0) && (
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {booking.djCharges > 0 && (
+              <div className="bg-yellow-50 p-3 rounded-lg">
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 text-yellow-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                  </svg>
+                  <p className="text-xs text-yellow-700">DJ Charges</p>
+                </div>
+                <p className="text-sm font-semibold text-yellow-900 mt-1">{formatCurrency(booking.djCharges)}</p>
+              </div>
+            )}
+            {booking.decorCharges > 0 && (
+              <div className="bg-pink-50 p-3 rounded-lg">
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 text-pink-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                  </svg>
+                  <p className="text-xs text-pink-700">Decor Charges</p>
+                </div>
+                <p className="text-sm font-semibold text-pink-900 mt-1">{formatCurrency(booking.decorCharges)}</p>
+              </div>
+            )}
+            {booking.tmaCharges > 0 && (
+              <div className="bg-teal-50 p-3 rounded-lg">
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 text-teal-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-xs text-teal-700">TMA Charges</p>
+                </div>
+                <p className="text-sm font-semibold text-teal-900 mt-1">{formatCurrency(booking.tmaCharges)}</p>
+              </div>
+            )}
+            {booking.otherCharges > 0 && (
+              <div className="bg-orange-50 p-3 rounded-lg">
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 text-orange-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-xs text-orange-700">Other Charges</p>
+                </div>
+                <p className="text-sm font-semibold text-orange-900 mt-1">{formatCurrency(booking.otherCharges)}</p>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setIsExpenseModalOpen(true)}
@@ -323,6 +399,34 @@ const BookingCard = ({ bookingId }) => {
                       </div>
                     </div>
                     
+                    <!-- Additional Charges Section -->
+                    ${(booking.djCharges > 0 || booking.decorCharges > 0 || booking.tmaCharges > 0 || booking.otherCharges > 0) ? `
+                    <div class="border border-gray-200 rounded p-2 mb-3">
+                      <h2 class="text-sm font-semibold text-gray-800 mb-2 pb-1 border-b border-gray-200 print-small">Additional Charges</h2>
+                      <div class="space-y-1">
+                        ${booking.djCharges > 0 ? `
+                        <div class="flex justify-between text-xs print-small">
+                          <span class="text-gray-600">DJ Charges:</span>
+                          <span class="font-medium">₨${booking.djCharges.toLocaleString()}</span>
+                        </div>` : ''}
+                        ${booking.decorCharges > 0 ? `
+                        <div class="flex justify-between text-xs print-small">
+                          <span class="text-gray-600">Decor Charges:</span>
+                          <span class="font-medium">₨${booking.decorCharges.toLocaleString()}</span>
+                        </div>` : ''}
+                        ${booking.tmaCharges > 0 ? `
+                        <div class="flex justify-between text-xs print-small">
+                          <span class="text-gray-600">TMA Charges:</span>
+                          <span class="font-medium">₨${booking.tmaCharges.toLocaleString()}</span>
+                        </div>` : ''}
+                        ${booking.otherCharges > 0 ? `
+                        <div class="flex justify-between text-xs print-small">
+                          <span class="text-gray-600">Other Charges:</span>
+                          <span class="font-medium">₨${booking.otherCharges.toLocaleString()}</span>
+                        </div>` : ''}
+                      </div>
+                    </div>` : ''}
+                    
                     <div class="text-center text-gray-600 text-xs print-small mb-2">
                       <p>Thank you for choosing our services!</p>
                       <p class="mt-1">${booking.contactNumber}</p>
@@ -343,9 +447,19 @@ const BookingCard = ({ bookingId }) => {
             className="flex-1 min-w-[120px] px-3 py-2 bg-green-100 text-green-700 text-sm rounded-lg hover:bg-green-200 transition-colors flex items-center justify-center"
           >
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
             Print
+          </button>
+          {/* Added WhatsApp Share Button */}
+          <button
+            onClick={handleShareViaWhatsApp}
+            className="flex-1 min-w-[120px] px-3 py-2 bg-blue-100 text-blue-700 text-sm rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center"
+          >
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+            Share
           </button>
         </div>
       </div>

@@ -176,6 +176,47 @@ const BookingSlip = ({ bookingId }) => {
         </div>
       </div>
 
+      {/* Additional Charges - Only show if there are charges */}
+      {(booking.djCharges > 0 || booking.decorCharges > 0 || booking.tmaCharges > 0 || booking.otherCharges > 0) && (
+        <div className="mt-6 border border-gray-200 rounded-lg p-4 print:border-0 print:p-0">
+          <h3 className="text-lg font-medium text-gray-900 mb-4 print:text-xl">Additional Charges</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {booking.djCharges > 0 && (
+              <div className="flex justify-between">
+                <span className="font-medium text-gray-600">DJ Charges:</span>
+                <span>₨{booking.djCharges.toLocaleString()}</span>
+              </div>
+            )}
+            {booking.decorCharges > 0 && (
+              <div className="flex justify-between">
+                <span className="font-medium text-gray-600">Decor Charges:</span>
+                <span>₨{booking.decorCharges.toLocaleString()}</span>
+              </div>
+            )}
+            {booking.tmaCharges > 0 && (
+              <div className="flex justify-between">
+                <span className="font-medium text-gray-600">TMA Charges:</span>
+                <span>₨{booking.tmaCharges.toLocaleString()}</span>
+              </div>
+            )}
+            {booking.otherCharges > 0 && (
+              <div className="flex justify-between">
+                <span className="font-medium text-gray-600">Other Charges:</span>
+                <span>₨{booking.otherCharges.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Special Notes - Only show if there are notes */}
+      {booking.specialNotes && (
+        <div className="mt-6 border border-gray-200 rounded-lg p-4 print:border-0 print:p-0">
+          <h3 className="text-lg font-medium text-gray-900 mb-4 print:text-xl">Special Notes</h3>
+          <p className="text-gray-700">{booking.specialNotes}</p>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="mt-8 pt-6 border-t border-gray-200 text-center print:mt-4 print:pt-4 print:border-t print:border-gray-400">
         <p className="text-gray-500 text-sm print:text-black print:text-sm">

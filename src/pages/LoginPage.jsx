@@ -42,7 +42,6 @@ const LoginPage = () => {
             </svg>
           </div>
           <Title level={2} className="text-gray-800">Wedding Hall Manager</Title>
-          <Text type="secondary">Sign in to your account</Text>
         </div>
 
         <Card className="shadow-lg rounded-xl border-0">

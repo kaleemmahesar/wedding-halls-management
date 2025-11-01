@@ -54,14 +54,14 @@ const ExpenseManagementPage = () => {
   }, [expenses]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-4 md:py-8">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Expense Management</h1>
         </div>
 
         {/* Overall Expense Statistics */}
-        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-8">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6 md:mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Overall Expense Statistics</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Total Overall Expenses Card */}
@@ -144,8 +144,8 @@ const ExpenseManagementPage = () => {
         </div>
 
         {/* Booking Selection */}
-        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6 md:mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select Booking <span className="text-red-500">*</span>

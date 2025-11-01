@@ -76,9 +76,9 @@ const BookingsPage = () => {
   }, [bookings, searchTerm, dateFilter, statusFilter, sortBy, sortOrder]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+    <div className="min-h-screen bg-gray-50 py-4 md:py-8">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 md:mb-8 gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
             <p className="mt-1 text-gray-600">Manage all your event bookings in one place</p>
@@ -95,13 +95,13 @@ const BookingsPage = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-8">
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6 md:mb-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
@@ -182,8 +182,8 @@ const BookingsPage = () => {
 
         {/* Bookings Grid */}
         {filteredBookings.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-md p-8 sm:p-12 text-center">
-            <svg className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <div className="bg-white rounded-xl shadow-md p-6 md:p-12 text-center">
+            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <h3 className="mt-4 text-lg font-medium text-gray-900">No bookings found</h3>
@@ -198,7 +198,7 @@ const BookingsPage = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredBookings.map(booking => (
               <BookingCard key={booking.id} bookingId={booking.id} />
             ))}

@@ -67,15 +67,15 @@ const OrderSummaryPage = () => {
   }, [filteredBookings]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-4 md:py-8">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Order Summary</h1>
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Order Summary</h1>
           <p className="text-gray-600">View and analyze your booking data</p>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6 md:mb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
@@ -111,8 +111,8 @@ const OrderSummaryPage = () => {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 md:mb-8">
+          <div className="bg-white rounded-lg shadow-md p-4">
             <div className="flex items-center">
               <div className="p-3 bg-blue-100 rounded-full">
                 <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -121,12 +121,12 @@ const OrderSummaryPage = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Bookings</p>
-                <p className="text-2xl font-semibold text-gray-900">{summary.totalBookings}</p>
+                <p className="text-xl font-semibold text-gray-900">{summary.totalBookings}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow-md p-4">
             <div className="flex items-center">
               <div className="p-3 bg-green-100 rounded-full">
                 <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -135,12 +135,12 @@ const OrderSummaryPage = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-semibold text-gray-900">₨{summary.totalRevenue.toLocaleString()}</p>
+                <p className="text-xl font-semibold text-gray-900">₨{summary.totalRevenue.toLocaleString()}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow-md p-4">
             <div className="flex items-center">
               <div className="p-3 bg-purple-100 rounded-full">
                 <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -149,12 +149,12 @@ const OrderSummaryPage = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Guests</p>
-                <p className="text-2xl font-semibold text-gray-900">{summary.totalGuests.toLocaleString()}</p>
+                <p className="text-xl font-semibold text-gray-900">{summary.totalGuests.toLocaleString()}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow-md p-4">
             <div className="flex items-center">
               <div className="p-3 bg-yellow-100 rounded-full">
                 <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -163,14 +163,14 @@ const OrderSummaryPage = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Advance</p>
-                <p className="text-2xl font-semibold text-gray-900">₨{summary.totalAdvance.toLocaleString()}</p>
+                <p className="text-xl font-semibold text-gray-900">₨{summary.totalAdvance.toLocaleString()}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Bookings by Type */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6 md:mb-8">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Bookings by Function Type</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(bookingsByType).map(([type, data]) => (
@@ -187,10 +187,10 @@ const OrderSummaryPage = () => {
         </div>
 
         {/* Bookings Table */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-4">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Bookings List</h2>
           {filteredBookings.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center py-8">
               <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
@@ -202,22 +202,22 @@ const OrderSummaryPage = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Customer
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Function Type
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Date
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Guests
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Revenue
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Advance
                     </th>
                   </tr>
@@ -225,23 +225,23 @@ const OrderSummaryPage = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredBookings.map((booking) => (
                     <tr key={booking.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{booking.bookingBy}</div>
                         <div className="text-sm text-gray-500">{booking.contactNumber}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                         {booking.functionType}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                         {dayjs(booking.functionDate).format('MMM D, YYYY')}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                         {booking.guests?.toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                         ₨{booking.totalCost?.toLocaleString() || 0}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                         ₨{booking.advance?.toLocaleString() || 0}
                       </td>
                     </tr>

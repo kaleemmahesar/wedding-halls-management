@@ -34,6 +34,11 @@ function App() {
           <Layout><BookingFormPage /></Layout>
         </ProtectedRoute>
       } />
+      <Route path="/bookings/edit/:id" element={
+        <ProtectedRoute>
+          <Layout><BookingFormPage /></Layout>
+        </ProtectedRoute>
+      } />
       <Route path="/bookings/:id" element={
         <ProtectedRoute>
           <Layout><BookingFormPage /></Layout>

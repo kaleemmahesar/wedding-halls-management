@@ -19,6 +19,11 @@ export class Booking {
     totalCost = 0,
     advance = 0,
     balance = 0,
+    djCharges = 0,
+    decorCharges = 0,
+    tmaCharges = 0,
+    otherCharges = 0,
+    specialNotes = '',
     menuItems = [], // Array of menu item names
     payments = [] // Array of payment records
   } = {}) {
@@ -40,6 +45,11 @@ export class Booking {
     this.totalCost = totalCost;
     this.advance = advance;
     this.balance = balance;
+    this.djCharges = djCharges;
+    this.decorCharges = decorCharges;
+    this.tmaCharges = tmaCharges;
+    this.otherCharges = otherCharges;
+    this.specialNotes = specialNotes;
     this.menuItems = menuItems; // Array of menu item names (strings)
     this.payments = payments; // Array of payment records with { amount, date, method }
   }
